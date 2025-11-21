@@ -1,0 +1,84 @@
+-- =====================================
+-- CREATE DIMENSION TABLES
+-- =====================================
+
+-- DIM DATE
+DROP TABLE IF EXISTS Dim_Date;
+GO
+
+CREATE TABLE Dim_Date (
+    DateKey INT PRIMARY KEY,
+    Date DATE,
+    Year INT,
+    MonthNum INT,
+    MonthName NVARCHAR(20),
+    Quarter NVARCHAR(10),
+    Weekday NVARCHAR(20)
+);
+
+-- DIM PRODUCT
+DROP TABLE IF EXISTS Dim_Product;
+GO
+
+CREATE TABLE Dim_Product (
+    ProductKey INT IDENTITY(1,1) PRIMARY KEY,
+    Product NVARCHAR(50),
+    Category NVARCHAR(50)
+);
+
+-- DIM REGION
+DROP TABLE IF EXISTS Dim_Region;
+GO
+
+CREATE TABLE Dim_Region (
+    RegionKey INT IDENTITY(1,1) PRIMARY KEY,
+    Region NVARCHAR(50)
+);
+
+-- DIM CUSTOMER
+DROP TABLE IF EXISTS Dim_Customer;
+GO
+
+CREATE TABLE Dim_Customer (
+    CustomerKey INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerID NVARCHAR(50),
+    CustomerType NVARCHAR(50)
+);
+
+-- DIM COST (for Margin calculations)
+DROP TABLE IF EXISTS Dim_Cost;
+GO
+
+CREATE TABLE Dim_Cost (
+    Product NVARCHAR(50),
+    CostPct FLOAT  -- % of UnitPrice used as COGS
+);
+
+
+
+
+
+
+-- =====================================
+-- CREATE FACT SALES TABLE
+-- =====================================
+
+DROP TABLE IF EXISTS Fact_Sales;
+GO
+
+CREATE TABLE Fact_Sales (
+    OrderID NVARCHAR(50),
+    Date DATE,
+    DateKey INT,
+    CustomerID NVARCHAR(50),
+    CustomerType NVARCHAR(50),
+    Region NVARCHAR(50),
+    Product NVARCHAR(50),
+    Category NVARCHAR(50),
+    QuantityKg FLOAT,
+    UnitPrice FLOAT,
+    Discount DECIMAL(10,2),
+    Channel NVARCHAR(50),
+    TotalSales FLOAT,
+    Profit FLOAT
+);

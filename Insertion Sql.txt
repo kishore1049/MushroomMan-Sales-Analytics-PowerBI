@@ -1,0 +1,107 @@
+-- ====================================================
+-- CLEAN & LOAD BASE DATA INTO Fact_Sales
+-- ====================================================
+
+INSERT INTO Fact_Sales
+(
+    OrderID, Date, DateKey, CustomerID, CustomerType, Region,
+    Product, Category, QuantityKg, UnitPrice, Discount,
+    Channel, TotalSales, Profit
+)
+SELECT
+    OrderID,
+    Date,
+    CONVERT(INT, FORMAT(Date,'yyyyMMdd')) AS DateKey,
+    CustomerID,
+    CustomerType,
+    Region,
+    Product,
+    Category,
+    ROUND(QuantityKg, 2) AS QuantityKg,
+    ROUND(UnitPrice, 2) AS UnitPrice,
+    ISNULL(Discount, 0) AS Discount,
+    Channel,
+    -- Total Sales formula
+    (QuantityKg * UnitPrice * (1 - (ISNULL(Discount,0)/100))) AS TotalSales,
+    -- Profit estimate
+    (QuantityKg * UnitPrice * (1 - (ISNULL(Discount,0)/100))) -
+    (QuantityKg * UnitPrice * 0.68) AS Profit  -- 68% cost baseline
+FROM Sales_Staging;
+
+
+
+
+-- ====================================================
+-- INSERT SEASONAL SPIKE ORDERS FOR 2024
+-- ====================================================
+
+INSERT INTO Fact_Sales (
+    OrderID, Date, DateKey, CustomerID, CustomerType,
+    Region, Product, Category, QuantityKg, UnitPrice,
+    Discount, Channel, TotalSales, Profit
+)
+VALUES
+('SPK2024_001', '2024-12-10', 20241210, 'CUST9991', 'Restaurant',
+ 'London', 'Portobello', 'Cultivated', 480, 18.00, 0, 'Direct Market',
+ 480 * 18, 480*18 - (480*18*0.68)),
+
+('SPK2024_002', '2024-12-18', 20241218, 'CUST9992', 'Wholesaler',
+ 'North East', 'Shiitake', 'Cultivated', 650, 22.00, 5, 'Distributor',
+ 650 * 22 * 0.95, (650 * 22 * 0.95) - (650*22*0.68)),
+
+('SPK2024_003', '2024-12-22', 20241222, 'CUST9993', 'Retailer',
+ 'London', 'Button', 'Cultivated', 900, 12.00, 0, 'Direct Market',
+ 900 * 12, 900*12 - (900*12*0.68));
+
+
+
+
+-- ====================================================
+-- INSERT SEASONAL SPIKE ORDERS FOR 2025
+-- ====================================================
+
+INSERT INTO Fact_Sales (
+    OrderID, Date, DateKey, CustomerID, CustomerType,
+    Region, Product, Category, QuantityKg, UnitPrice,
+    Discount, Channel, TotalSales, Profit
+)
+VALUES
+('SPK2025_001', '2025-12-10', 20251210, 'CUST8881', 'Restaurant',
+ 'London', 'Portobello', 'Cultivated', 300, 18.50, 0, 'Direct Market',
+ 300 * 18.50, (300*18.50) - (300*18.50*0.68)),
+
+('SPK2025_002', '2025-12-18', 20251218, 'CUST8882', 'Wholesaler',
+ 'South West', 'Shiitake', 'Cultivated', 420, 21.00, 0, 'Distributor',
+ 420 * 21, (420*21) - (420*21*0.68)),
+
+('SPK2025_003', '2025-12-22', 20251222, 'CUST8883', 'Retailer',
+ 'London', 'Button', 'Cultivated', 520, 11.00, 0, 'Online Order',
+ 520 * 11, (520*11) - (520*11*0.68));
+
+
+
+
+
+-- ====================================================
+-- POPULATE DIM DATE 2024-2026
+-- ====================================================
+
+;WITH Calendar AS (
+    SELECT CAST('2024-01-01' AS DATE) AS Dt
+    UNION ALL
+    SELECT DATEADD(DAY, 1, Dt)
+    FROM Calendar
+    WHERE Dt < '2026-12-31'
+)
+INSERT INTO Dim_Date
+(DateKey, Date, Year, MonthNum, MonthName, Quarter, Weekday)
+SELECT
+    CONVERT(INT, FORMAT(Dt,'yyyyMMdd')),
+    Dt,
+    YEAR(Dt),
+    MONTH(Dt),
+    FORMAT(Dt,'MMMM'),
+    'Q' + CAST(DATEPART(QUARTER, Dt) AS NVARCHAR(1)),
+    FORMAT(Dt,'dddd')
+FROM Calendar
+OPTION (MAXRECURSION 5000);
